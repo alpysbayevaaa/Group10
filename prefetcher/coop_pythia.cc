@@ -11,7 +11,7 @@ CoopPythiaPrefetcher::CoopPythiaPrefetcher(std::string type)
 
 void CoopPythiaPrefetcher::invoke_prefetcher(uint64_t ip, uint64_t addr, uint8_t cache_hit, uint8_t type, std::vector<uint64_t> &pf_addrs)
 {
-    if (!knob::coop_enable_bw_throttling || bandwidth_ok()) {
+    if (!knob::coop_enable_bw_throttling || bandwidth_ok()) { // check if status miss status handling register and prefetch Que
         if (knob::coop_enable_multicore)
             perform_multicore_prefetching(ip, addr, pf_addrs);
         else
