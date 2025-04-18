@@ -1,0 +1,64 @@
+
+#include <vector>
+#include <iostream>
+#include "cache.h"
+#include "coop_pythia.h"
+
+static CoopPythiaPrefetcher* prefetcher = nullptr;
+
+void l2c_prefetcher_initialize() {
+    prefetcher = new CoopPythiaPrefetcher("coop_pythia", nullptr);
+    std::cout << "l2c_prefetcher_initialize: CoopPythiaPrefetcher created" << std::endl;
+}
+
+uint32_t l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit, uint8_t type, uint32_t metadata_in) {
+    if (prefetcher) {
+        std::vector<uint64_t> pref_addr;
+        prefetcher->invoke_prefetcher(ip, addr, cache_hit, type, pref_addr);
+    }
+    return metadata_in;
+}
+
+uint32_t l2c_prefetcher_cache_fill(uint64_t addr, uint32_t set, uint32_t way, uint8_t prefetch, uint64_t evicted_addr, uint32_t metadata_in) {
+    if (prefetch && prefetcher) {
+        prefetcher->register_fill(addr);
+    }
+    return metadata_in;
+}
+
+uint32_t l2c_prefetcher_prefetch_hit(uint64_t addr, uint64_t ip, uint32_t metadata_in) {
+    if (prefetcher) {
+        prefetcher->register_prefetch_hit(addr);
+    }
+    return metadata_in;
+}
+
+void l2c_prefetcher_final_stats() {
+    if (prefetcher) {
+        prefetcher->dump_stats();
+    }
+}
+
+void l2c_prefetcher_print_config() {
+    if (prefetcher) {
+        prefetcher->print_config();
+    }
+}
+
+void l2c_prefetcher_broadcast_bw(uint8_t bw_level) {
+    if (prefetcher) {
+        prefetcher->update_bw(bw_level);
+    }
+}
+
+void l2c_prefetcher_broadcast_ipc(uint8_t ipc) {
+    if (prefetcher) {
+        prefetcher->update_ipc(ipc);
+    }
+}
+
+void l2c_prefetcher_broadcast_acc(uint8_t acc_level) {
+    if (prefetcher) {
+        prefetcher->update_acc(acc_level);
+    }
+}
