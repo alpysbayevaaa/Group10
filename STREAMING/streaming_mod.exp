@@ -1,0 +1,33 @@
+##############################################################
+##
+## This file contains all the experiments required
+## to reproduce four-core performance results of Pythia.
+##
+## Please follow the README to know how to use this file.
+## 
+## Owner: Rahul Bera (write2bera@gmail.com)
+##
+###############################################################
+
+
+# configurations
+BASE = --warmup_instructions=50000000 --simulation_instructions=150000000
+NOPREF = --config=$(PYTHIA_HOME)/config/nopref.ini
+STRIDE = --l2c_prefetcher_types=stride --config=$(PYTHIA_HOME)/config/stride.ini
+SPP_DEV2 = --l2c_prefetcher_types=spp_dev2 --config=$(PYTHIA_HOME)/config/spp_dev2.ini
+MLOP = --l2c_prefetcher_types=mlop --config=$(PYTHIA_HOME)/config/mlop.ini
+BINGO = --l2c_prefetcher_types=bingo --config=$(PYTHIA_HOME)/config/bingo.ini
+PYTHIA = --l2c_prefetcher_types=scooby --config=$(PYTHIA_HOME)/config/pythia.ini
+COOP_PYTHIA = --l2c_prefetcher_types=coop_pythia --config=$(PYTHIA_HOME)/config/coop_pythia.ini
+DSPATCH = --l2c_prefetcher_types=dspatch --config=$(PYTHIA_HOME)/config/dspatch.ini
+PPF = --l2c_prefetcher_types=spp_ppf_dev --config=$(PYTHIA_HOME)/config/spp_ppf_dev.ini
+
+# Experiments for Figure 11(a)
+#nopref						$(BASE) $(NOPREF) --dram_io_freq=2400
+#spp						$(BASE) $(SPP_DEV2) --dram_io_freq=2400
+#bingo						$(BASE) $(BINGO) --dram_io_freq=2400
+#mlop						$(BASE) $(MLOP) --dram_io_freq=2400
+#pythia						$(BASE) $(PYTHIA) --dram_io_freq=2400
+coop_pythia					$(BASE) $(COOP_PYTHIA) --dram_io_freq=2400
+#dspatch					$(BASE) $(DSPATCH) --dram_io_freq=2400
+#ppf						$(BASE) $(PPF) --dram_io_freq=2400
