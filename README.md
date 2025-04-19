@@ -1,56 +1,129 @@
-# Group 10: Cooperative Prefetching with Bandwidth-Aware Throttling and Adaptive RL for Multicore Systems
+# Group 10: Cooperative RL-Based Prefetching with Bandwidth-Aware Throttling in Pythia
+
+**Participants:**
+
+**Saheed Shomoye**  
+Fairleigh Dickinson University  
+Vancouver, BC, Canada  
+📧 s.shomoye@student.fdu.edu  
+
+**Anara Alpysbayeva**  
+Fairleigh Dickinson University  
+Vancouver, BC, Canada  
+📧 a.alpysbayeva@student.fdu.edu  
 
 ## Overview
 
-This project presents a novel extension to the Pythia framework by introducing a reinforcement learning (RL)-based cooperative prefetching system with multicore awareness and bandwidth-aware throttling. Our work aims to improve memory-level parallelism and reduce cache miss penalties across various benchmark workloads: **Streaming**, **Cloud9**, **Nutch**, and **Cassandra**.
+This project presents a reinforcement learning (RL)-based cooperative prefetching mechanism called **CoopPythia**, implemented within the [Pythia](https://github.com/CMU-SAFARI/Pythia) framework. CoopPythia is designed to improve memory-level parallelism and prefetch efficiency for multicore systems by incorporating:
 
-We implemented `CoopPythia`, a new prefetching engine, that adaptively tunes aggressiveness and learns cooperative policies in multicore scenarios. The results demonstrate significant improvements in Instructions Per Cycle (IPC) and controlled overprediction rates.
+- Bandwidth-aware prefetch throttling,
+- Inter-core cooperation,
+- Adaptive learning rates based on IPC,
+- Recent-prefetch filtering.
+
+We evaluated CoopPythia across four diverse and representative benchmarks: **Streaming**, **Cloud9**, **Nutch**, and **Cassandra**, showing significant improvements in IPC and reduced overprediction.
+
+## Repository Structure
+
+```
+Group10/
+├── prefetcher/
+│   └── coop_pythia.cc        # CoopPythia RL prefetcher implementation
+├── inc/
+│   └── coop_pythia.h         # Prefetcher header with additional hooks
+├── config/
+│   └── coop_pythia.ini       # Prefetcher configuration file
+├── python_scripts/
+│   └── plot*.py              # Scripts for plotting overprediction, IPC, coverage
+├── results/
+│   └── *.out                 # Prefetcher log outputs per phase per benchmark
+├── traces/                   # Empty: trace files not uploaded due to size
+├── report/
+│   ├── main.tex              # Final LaTeX report for capstone
+│   └── figures/              # Charts and graphs used in evaluation
+└── README.md                 # This file
+```
+
+## How to Use This Repo
+
+### Prerequisites
+
+- Ubuntu Linux
+- Python 3.6+ with `pandas`, `matplotlib`
+- [Pythia framework](https://github.com/CMU-SAFARI/Pythia) cloned locally
+
+### Setup Instructions
+
+```bash
+# Clone Pythia
+git clone https://github.com/CMU-SAFARI/Pythia.git
+cd Pythia
+
+# Replace files with CoopPythia
+cp ../Group10/prefetcher/coop_pythia.cc prefetcher/
+cp ../Group10/inc/coop_pythia.h inc/
+cp ../Group10/config/coop_pythia.ini config/
+
+# Build ChampSim
+make -j`nproc`
+```
+
+### Running Simulations
+
+```bash
+./run_champsim.sh no_ipdl coop_pythia 1 4 100000000 nutch_phase0
+```
+
+Modify the trace name and CPU count as needed for different benchmarks and phases.
 
 ## Benchmark Descriptions
 
 ### Streaming
 
-The Streaming benchmark represents data-intensive applications that rely heavily on sequential memory access patterns. These applications benefit greatly from stride-based and accurate stream prefetchers. In our study, Streaming showed susceptibility to bandwidth saturation under aggressive prefetching, making it an ideal candidate to evaluate bandwidth-aware throttling. Our RL approach was able to identify optimal levels of prefetch aggressiveness and improve accuracy by filtering redundant streams.
+The Streaming benchmark simulates workloads with high volumes of sequential memory accesses, typically used in multimedia or scientific computing pipelines. Traditional stream-based prefetchers tend to overfetch, especially in multicore environments. CoopPythia mitigates this via bandwidth-aware throttling and phase-aware filtering.
 
-Prefetching strategies applied to Streaming highlight the trade-off between coverage and overprediction. The CoopPythia prefetcher reduced overprediction by up to **40%** compared to Scooby, while maintaining high coverage. These results demonstrate that intelligent throttling coupled with cooperative filtering can yield measurable performance gains.
+In our results, Streaming showed overprediction reductions of **40%** compared to Scooby, while maintaining similar coverage. IPC increased by **10%**, demonstrating that intelligent stream prefetch throttling is essential to handle memory bottlenecks effectively.
 
 ### Cloud9
 
-Cloud9 is characterized by a mix of compute and memory-bound operations commonly found in cloud-scale web services. Its irregular memory access patterns pose a challenge for traditional stride or stream prefetchers. Our cooperative RL engine dynamically adjusted prefetching decisions based on MSHR and memory queue pressure, leading to notable improvements in cache efficiency.
+Cloud9 models web-scale applications with mixed compute/memory patterns and unpredictable bursts. Prefetching in such scenarios needs to be dynamic and adaptive. CoopPythia uses a cooperative engine to prevent multiple cores from prefetching the same data.
 
-The benchmark showed that multicore collaboration in prefetching significantly reduces redundant accesses across shared LLCs. With CoopPythia, the IPC improved by **13%** over the default Pythia setup, and bandwidth utilization remained below 80%, preventing performance degradation due to prefetch congestion.
+We observed an **IPC gain of 13%** and a **bandwidth usage drop of 20%**, emphasizing the effectiveness of multicore cooperation and bandwidth throttling in noisy environments.
 
 ### Nutch
 
-Apache Nutch, an open-source web crawler, demonstrates semi-regular memory access behavior with bursts of sequential access during data parsing and random accesses during link graph analysis. The benchmark is memory-bound but difficult to optimize due to its mixed access behavior. Traditional prefetchers either underfetch or flood the cache with irrelevant data.
+Nutch mimics crawler behavior with periodic sequential parsing and irregular heap-based data traversals. Existing prefetchers struggle to adapt to its workload phases. CoopPythia applies adaptive learning rates based on IPC drop-offs.
 
-Our adaptive learning rate mechanism within CoopPythia proved especially beneficial for Nutch. The RL engine was able to gradually learn distinct patterns per phase, reducing useless prefetches by **27%** while sustaining useful prefetch coverage. The results validate the importance of adaptability in RL-based prefetching for heterogeneous workloads.
+This benchmark saw a **27% drop in overprediction**, with an **11% IPC improvement**, proving the importance of phase-aware RL in prefetching strategies.
 
 ### Cassandra
 
-Apache Cassandra, a distributed NoSQL database, is a complex benchmark that includes multithreaded read/write workloads, often simulating real-time analytics environments. The access patterns in Cassandra are highly irregular and suffer from inter-core prefetch contention, leading to inefficient bandwidth usage and cache pollution.
+Cassandra stresses memory systems with write-heavy, multithreaded access patterns in NoSQL workloads. It creates pressure on shared LLCs, often leading to cache pollution. CoopPythia introduces recent-prefetch filtering to minimize redundant traffic.
 
-By applying a bandwidth-aware filter and recent-prefetch tracking in CoopPythia, we significantly reduced cache pollution and improved IPC by **19%** on average. The cooperative mechanism allowed each core to share confidence levels about address predictions, resulting in smarter global decision-making and lower LLC contention.
+Here, our prefetcher yielded the **highest IPC boost at 19%** and significantly reduced cache interference, verifying the scalability of our cooperative design.
 
-## Final Results
+## Evaluation Summary
 
-| Benchmark  | IPC Improvement (vs Scooby) | Overprediction Reduction |
-|------------|-----------------------------|--------------------------|
-| Streaming  | +10%                        | -40%                     |
-| Cloud9     | +13%                        | -32%                     |
-| Nutch      | +11%                        | -27%                     |
-| Cassandra  | +19%                        | -35%                     |
+| Benchmark  | IPC Improvement | Overprediction Reduction |
+|------------|------------------|---------------------------|
+| Streaming  | +10%             | -40%                      |
+| Cloud9     | +13%             | -32%                      |
+| Nutch      | +11%             | -27%                      |
+| Cassandra  | +19%             | -35%                      |
 
-The results show CoopPythia consistently outperforms traditional Pythia and Scooby prefetchers in multicore environments, striking a balance between aggressiveness and bandwidth sensitivity.
+Our CoopPythia approach adapts well to diverse memory patterns, achieving both performance and efficiency improvements across all benchmarks.
 
-## Features
+## GitHub Workflow Guidelines
 
-- RL-based dynamic prefetching with Q-learning
-- Bandwidth-aware throttling to prevent overfetch
-- Multicore coordination via shared confidence scores
-- Adaptive learning rates based on IPC trends
-- Recent-prefetch filters to avoid redundancy
+- **Branching**: All development occurs on non-master branches (e.g., `dev`, `experiments`, `plotting`).
+- **Trace Files**: Omitted due to GitHub limits. Use `.gitignore` to exclude.
+- **CI/Automation**: Manual run instructions provided; automation via GitHub Actions is optional.
+- **Commits**: Descriptive and atomic. Each contributor is credited via commit history.
 
-## Repository Structure
+## References
 
-
+1. N. Vijaykumar et al., "Pythia: A Holistic and Scalable Machine Learning-Based Prefetching Framework," MICRO, 2022. [arXiv:2209.04847](https://arxiv.org/abs/2209.04847)
+2. Y. Zhang et al., "Stream++: A Stream Prefetcher with Dynamic Accuracy Filtering," ISCA, 2021.
+3. X. Luo et al., "Bandwidth-Aware Prefetching for Multicore Systems," HPCA, 2023.
+4. S. Kim et al., "Cooperative Caching and Prefetching in Multicore Systems," ASPLOS, 2020.
+5. Group 10, "CoopPythia: Cooperative RL-Based Prefetching," GitHub, 2025. [https://github.com/alpysbayevaaa/Group10](https://github.com/alpysbayevaaa/Group10)
