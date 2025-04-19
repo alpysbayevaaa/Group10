@@ -1,6 +1,6 @@
 # Group 10: Cooperative RL-Based Prefetching with Bandwidth-Aware Throttling in Pythia
 
-**Participants:**
+**Students:**
 
 **Saheed Shomoye**  
 Fairleigh Dickinson University  
