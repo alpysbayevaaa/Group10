@@ -1,4 +1,4 @@
-# Group 10: Cooperative RL-Based Prefetching with Bandwidth-Aware Throttling in Pythia
+# Group 10: Enhancing Hardware Prefetching In Multi-Core Systems Through Cooperative Reinforcement Learning (RL) Mechanisms
 
 **Group members:**
 
